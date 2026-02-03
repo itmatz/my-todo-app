@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>המשימות שלי</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>הרשימה שלי 📝</h1>
+        
+        <div class="input-wrapper">
+            <input type="text" id="taskInput" placeholder="מה המשימה הבאה?">
+            <select id="prioritySelect">
+                <option value="low">רגיל 🟢</option>
+                <option value="medium">בינוני 🟡</option>
+                <option value="high">דחוף 🔴</option>
+            </select>
+            <button id="addBtn">הוסף +</button>
+        </div>
+
+        <div class="controls">
+            <div class="filters">
+                <button id="filterAll" class="filter-btn active">הכל</button>
+                <button id="filterActive" class="filter-btn">לביצוע</button>
+                <button id="filterCompleted" class="filter-btn">הושלם</button>
+            </div>
+            <input type="text" id="searchInput" placeholder="חפש משימה...">
+        </div>
+
+        <ul id="taskList">
+            </ul>
+	
+	<div class="actions-footer">
+            <button id="exportBtn" class="action-btn">📥 שמור כקובץ</button>
+            <button id="importBtn" class="action-btn">📤 טען מקובץ</button>
+            
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <script src="app.js"></script> 
+</body>
+</html>
