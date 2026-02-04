@@ -20,17 +20,43 @@ body {
 
 h1 { color: #333; margin-bottom: 1.5rem; font-weight: 700; }
 
-.input-wrapper { display: flex; gap: 10px; margin-bottom: 20px; }
+.input-wrapper {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: center; /* מיישר את כולם לאמצע הגובה */
+    flex-wrap: wrap; /* שבירת שורה יפה במסכים קטנים */
+}
 
+/* שדה הטקסט הראשי - לוקח את רוב המקום */
+#taskInput {
+    flex-grow: 1; 
+    min-width: 200px;
+}
+
+/* שדה התאריך - גודל קבוע */
+#dateInput {
+    width: 140px; 
+    flex-grow: 0;
+    cursor: pointer;
+}
+
+/* כפתורים ובחירה - גודל לפי הטקסט */
+#prioritySelect, #addBtn {
+    flex-grow: 0;
+    white-space: nowrap;
+}
+
+/* הגדרה כללית לכל הכפתורים והשדות - גובה אחיד */
 input, select, button {
     padding: 12px;
     border-radius: 8px;
     border: 1px solid #ddd;
     font-family: inherit;
     outline: none;
+    height: 45px; /* גובה אחיד וקבוע לכולם */
+    box-sizing: border-box; /* חישוב גודל מדויק */
 }
-
-input { flex-grow: 1; }
 
 button#addBtn {
     background-color: #4f46e5;
