@@ -14,7 +14,8 @@ body {
     padding: 2.5rem;
     border-radius: 16px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    width: 450px; /* קצת הרחבנו */
+    width: 600px; /* הרחבנו מ-450 ל-600 כדי שהכל ייכנס בשורה אחת */
+    max-width: 95%; /* כדי שזה ייראה טוב גם בטלפון */
     text-align: center;
 }
 
