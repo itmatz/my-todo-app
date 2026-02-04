@@ -1,18 +1,22 @@
 const taskInput = document.getElementById('taskInput');
+const dateInput = document.getElementById('dateInput'); // חדש
 const prioritySelect = document.getElementById('prioritySelect');
 const addBtn = document.getElementById('addBtn');
 const taskList = document.getElementById('taskList');
 const searchInput = document.getElementById('searchInput');
 
-// כפתורי הסינון
+// כפתורי פילטר
 const filterAll = document.getElementById('filterAll');
 const filterActive = document.getElementById('filterActive');
 const filterCompleted = document.getElementById('filterCompleted');
 
-let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+// כפתורי ייבוא ייצוא
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const fileInput = document.getElementById('fileInput');
 
-// משתנים למעקב אחרי הסינון הנוכחי
-let currentFilter = 'all'; // האפשרויות: 'all', 'active', 'completed'
+let tasks = JSON.parse(localStorage.getItem('myTasks')) || [];
+let currentFilter = 'all'; 
 let searchTerm = '';
 
 renderTasks();
@@ -21,12 +25,8 @@ function saveToLocalStorage() {
     localStorage.setItem('myTasks', JSON.stringify(tasks));
 }
 
-// פונקציית עזר לעדכון הכפתורים הפעילים
 function updateFilterButtons() {
-    // מסירים את הקלאס active מכולם
     [filterAll, filterActive, filterCompleted].forEach(btn => btn.classList.remove('active'));
-    
-    // מוסיפים לכפתור הנכון
     if (currentFilter === 'all') filterAll.classList.add('active');
     else if (currentFilter === 'active') filterActive.classList.add('active');
     else if (currentFilter === 'completed') filterCompleted.classList.add('active');
@@ -35,175 +35,137 @@ function updateFilterButtons() {
 function renderTasks() {
     taskList.innerHTML = '';
 
-    // --- שלב הסינון ---
-    // אנחנו יוצרים רשימה זמנית רק לצורך התצוגה
     const filteredTasks = tasks.filter(task => {
-        // 1. בדיקת סטטוס (האם המשימה מתאימה לפילטר?)
         const matchesStatus = 
             (currentFilter === 'all') ||
             (currentFilter === 'active' && !task.isCompleted) ||
             (currentFilter === 'completed' && task.isCompleted);
-        
-        // 2. בדיקת חיפוש (האם הטקסט קיים?)
         const matchesSearch = task.text.includes(searchTerm);
-
-        // מחזירים אמת רק אם שני התנאים מתקיימים
         return matchesStatus && matchesSearch;
     });
 
-    // --- שלב הציור (על הרשימה המסוננת) ---
     filteredTasks.forEach((task) => {
-        // כאן אנחנו צריכים למצוא את האינדקס המקורי של המשימה במערך הראשי
-        // כדי שהמחיקה תעבוד נכון על המשימה הנכונה
         const originalIndex = tasks.indexOf(task);
-
         const li = document.createElement('li');
         
-        // טיפול במשימות ישנות ללא דחיפות (שיהיה להן ירוק כדיפולט)
+        // צבע דחיפות
         const priorityClass = task.priority ? `priority-${task.priority}` : 'priority-low';
         li.classList.add(priorityClass);
 
-        const taskSpan = document.createElement('span');
-        taskSpan.textContent = task.text;
-        
+        // --- חלק 1: הצ'ק בוקס החדש ---
+        const checkbox = document.createElement('div');
+        checkbox.className = 'custom-checkbox';
         if (task.isCompleted) {
-            taskSpan.style.textDecoration = "line-through";
-            taskSpan.style.color = "#aaa";
+            checkbox.classList.add('checked');
             li.style.opacity = "0.6";
         }
-
-        taskSpan.addEventListener('click', () => {
+        
+        // רק לחיצה על הצ'ק בוקס משנה סטטוס!
+        checkbox.addEventListener('click', (e) => {
+            e.stopPropagation(); // חשוב! מונע באגים
             task.isCompleted = !task.isCompleted;
             saveToLocalStorage();
             renderTasks();
         });
 
+        // --- חלק 2: הטקסט והתאריך ---
+        const contentDiv = document.createElement('div');
+        contentDiv.style.flexGrow = "1";
+        contentDiv.style.textAlign = "right";
+        contentDiv.style.marginRight = "10px";
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = task.text;
+        textSpan.style.display = "block"; // שורה נפרדת
+        if (task.isCompleted) textSpan.style.textDecoration = "line-through";
+
+        // הצגת התאריך (אם קיים)
+        if (task.dueDate) {
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'task-date';
+            // הופך תאריך אמריקאי (2025-02-04) לישראלי (04/02/2025)
+            const dateObj = new Date(task.dueDate);
+            dateSpan.textContent = "📅 " + dateObj.toLocaleDateString('he-IL');
+            contentDiv.appendChild(dateSpan);
+        }
+        contentDiv.appendChild(textSpan);
+
+        // --- חלק 3: כפתורי פעולה (עריכה ומחיקה) ---
+        const actionsDiv = document.createElement('div');
+        
+        // כפתור עריכה ✏️
+        const editBtn = document.createElement('button');
+        editBtn.textContent = '✏️';
+        editBtn.className = 'edit-btn';
+        editBtn.title = "ערוך משימה";
+        
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // פותח חלונית פשוטה לעריכה
+            const newText = prompt("ערוך את המשימה:", task.text);
+            if (newText !== null && newText.trim() !== "") {
+                task.text = newText.trim();
+                saveToLocalStorage();
+                renderTasks();
+            }
+        });
+
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = '✕';
         deleteBtn.className = 'delete-btn';
-
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            tasks.splice(originalIndex, 1); // מוחקים לפי האינדקס האמיתי
+            tasks.splice(originalIndex, 1);
             saveToLocalStorage();
             renderTasks();
         });
 
-        li.appendChild(taskSpan);
-        li.appendChild(deleteBtn);
+        // הרכבת המשימה
+        actionsDiv.appendChild(editBtn);
+        actionsDiv.appendChild(deleteBtn);
+
+        li.appendChild(checkbox); // צ'ק בוקס מימין
+        li.appendChild(contentDiv); // טקסט באמצע
+        li.appendChild(actionsDiv); // כפתורים משמאל
+        
         taskList.appendChild(li);
     });
     
-    // מעדכנים את עיצוב הכפתורים
     updateFilterButtons();
 }
 
-// --- אירועים חדשים ---
-
-// אירועי לחיצה על כפתורי הסינון
+// אירועים (ללא שינוי מהותי, רק הוספת התאריך)
 filterAll.addEventListener('click', () => { currentFilter = 'all'; renderTasks(); });
 filterActive.addEventListener('click', () => { currentFilter = 'active'; renderTasks(); });
 filterCompleted.addEventListener('click', () => { currentFilter = 'completed'; renderTasks(); });
 
-// אירוע הקלדה בחיפוש
 searchInput.addEventListener('input', (e) => {
     searchTerm = e.target.value;
     renderTasks();
 });
 
-// אירוע הוספה (נשאר אותו דבר)
 addBtn.addEventListener('click', function() {
     const text = taskInput.value;
     const priority = prioritySelect.value;
+    const date = dateInput.value; // לוקחים את התאריך
 
     if (text === '') { alert('אנא כתוב משימה!'); return; }
 
     const newTask = {
+        id: crypto.randomUUID(), // מזהה ייחודי (טוב לעתיד)
         text: text,
         isCompleted: false,
-        priority: priority
+        priority: priority,
+        dueDate: date // שומרים את התאריך
     };
 
     tasks.push(newTask);
     saveToLocalStorage();
     
     taskInput.value = '';
+    dateInput.value = ''; // מאפסים גם את התאריך
     renderTasks();
 });
 
-// --- לוגיקת Export / Import ---
-
-const exportBtn = document.getElementById('exportBtn');
-const importBtn = document.getElementById('importBtn');
-const fileInput = document.getElementById('fileInput');
-
-// 1. ייצוא (Export)
-exportBtn.addEventListener('click', () => {
-    // הופכים את המערך לטקסט יפה (עם רווחים לקריאות)
-    const dataStr = JSON.stringify(tasks, null, 2);
-    
-    // יוצרים "בלוב" (קובץ וירטואלי)
-    const blob = new Blob([dataStr], { type: "application/json" });
-    
-    // יוצרים לינק להורדה
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "my_tasks_backup.json"; // שם הקובץ שירד
-    a.click(); // מדמים לחיצה
-    
-    // ניקוי זיכרון
-    URL.revokeObjectURL(url);
-});
-
-// 2. כפתור הייבוא - רק פותח את חלון בחירת הקובץ
-importBtn.addEventListener('click', () => {
-    fileInput.click();
-});
-
-// 3. הטיפול בקובץ שנבחר
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    
-    // מה קורה כשהקובץ סיים להיקרא
-    reader.onload = (event) => {
-        try {
-            // מנסים להפוך את הטקסט חזרה למערך
-            const importedTasks = JSON.parse(event.target.result);
-            
-            // בדיקה בסיסית: האם זה בכלל מערך?
-            if (!Array.isArray(importedTasks)) {
-                throw new Error("מבנה הקובץ אינו תקין");
-            }
-
-            // שואלים את המשתמש איך למזג
-            const shouldReplace = confirm(
-                "קובץ נמצא! \nלחץ 'אישור' כדי להחליף את הרשימה הקיימת כולה.\nלחץ 'ביטול' כדי להוסיף את המשימות החדשות לרשימה הקיימת."
-            );
-
-            if (shouldReplace) {
-                // החלפה מלאה
-                tasks = importedTasks;
-            } else {
-                // מיזוג (הוספה לסוף)
-                tasks = [...tasks, ...importedTasks];
-            }
-
-            saveToLocalStorage();
-            renderTasks();
-            alert("המשימות נטענו בהצלחה! 🎉");
-
-        } catch (error) {
-            alert("שגיאה בטעינת הקובץ: " + error.message);
-        }
-        
-        // מאפסים את האינפוט כדי שאפשר יהיה לטעון את אותו קובץ שוב אם צריך
-        fileInput.value = ''; 
-    };
-
-    // פקודה לקרוא את הקובץ כטקסט
-    reader.readAsText(file);
-});
+// --- כאן מדביקים את קוד ה-Export/Import שהיה לך קודם ---
+// (תעתיק אותו מהקובץ הקודם שלך, הוא נשאר אותו דבר)
